@@ -155,7 +155,7 @@ class OrderResource extends Resource
                                             ->formatStateUsing(fn($state, Get $get) => $state ?? Product::find($get('product_id'))?->price ?? 0),
                                         TextInput::make('qty')
                                             ->numeric()
-                                            ->default(0)
+                                            ->default(1)
                                             ->reactive()
                                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                                 $price = $get('price') ?? 0;
