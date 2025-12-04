@@ -18,6 +18,7 @@ use Filament\Forms\Components\Section;
 use App\Filament\Exports\OrderExporter;
 use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\ExportAction;
@@ -30,11 +31,43 @@ use illuminate\Database\Eloquent\Relations\Relation;
 use App\Filament\Resources\OrderResource\RelationManagers;
 use App\Filament\Resources\OrderResource\RelationManagers\OrderDetailRelationManager;
 
+use Filament\Forms\Components\Actions\Action;
+
+
 class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
+    protected static ?string $activeNavigationIcon = 'heroicon-s-shopping-bag';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['id', 'customer.name'];
+    }
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Order ID' => $record->id ?? 'N/A',
+            'Customer Name' => $record->customer?->name ?? 'N/A',
+        ];
+    }
+
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'new')->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::count() > 0 ? 'info' : 'primary';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'The number of new orders';
+    }
 
     public static function form(Form $form): Form
     {
@@ -62,7 +95,19 @@ class OrderResource extends Resource
                                         $customer = Customer::find($state);
                                         $set('phone', $customer->phone ?? null);
                                         $set('address', $customer->address ?? null);
-                                    }),
+                                    })
+                                    ->createOptionForm([
+                                        TextInput::make('name')
+                                            ->required()
+                                            ->maxLength(255),
+                                        TextInput::make('phone')
+                                            ->tel()
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\Textarea::make('address')
+                                            ->required()
+                                            ->columnSpanFull(),
+                                    ]),
                                 Placeholder::make('phone')
                                     ->content(fn(Get $get) => Customer::find($get('customer_id'))?->phone ?? '-'),
                                 Placeholder::make('address')
@@ -77,7 +122,7 @@ class OrderResource extends Resource
                                     ->hiddenLabel()
                                     ->schema([
                                         Select::make('product_id')
-                                            ->relationship('product', 'name')
+                                            ->relationship('product', 'name', modifyQueryUsing: fn(Builder $query) => $query->where('is_active', true))
                                             ->reactive()
                                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
@@ -97,7 +142,8 @@ class OrderResource extends Resource
                                                 $discount_amount = $total * $discount / 100;
                                                 $set('../../discount_amount', $discount_amount);
                                                 $set('../../total_payment', $total - $discount_amount);
-                                            }),
+                                            })->searchable()
+                                            ->columnSpanFull(),
                                         TextInput::make('price')
                                             ->readOnly()
                                             ->numeric()
@@ -120,12 +166,17 @@ class OrderResource extends Resource
                                                 $set('../../discount_amount', $discount_amount);
                                                 $set('../../total_payment', $total - $discount_amount);
                                             })
-                                            ->minValue(1),
+                                            ->minValue(1)
+                                            ->maxValue(function (Get $get) {
+                                                $productID = $get('product_id');
+                                                $product = Product::find($productID);
+                                                return $product->stock ?? 0;
+                                            }),
                                         TextInput::make('subtotal')
                                             ->readOnly()
                                             ->prefix('Rp')
                                             ->default(0)
-                                    ])->columns(4)
+                                    ])->columns(3)
                                     ->addAction(
                                         fn(Action $action) => $action
                                             ->label('Add Product')
