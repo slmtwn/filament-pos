@@ -138,6 +138,11 @@ class OrderResource extends Resource
                                                 $total = collect($items)->sum(fn($item) => $item['subtotal'] ?? 0);
                                                 $set('../../total_price', $total);
 
+                                                $tax_rate = $get('../../tax_rate');
+                                                $tax_amount = $total * $tax_rate / 100;
+                                                $set('../../tax_amount', $tax_amount);
+                                                $set('../../total_payment', $total + $tax_amount);
+
                                                 $discount = $get('../../discount');
                                                 $discount_amount = $total * $discount / 100;
                                                 $set('../../discount_amount', $discount_amount);
@@ -146,12 +151,11 @@ class OrderResource extends Resource
                                             ->columnSpanFull(),
                                         TextInput::make('price')
                                             ->readOnly()
-                                            ->numeric()
                                             ->prefix('Rp')
                                             ->formatStateUsing(fn($state, Get $get) => $state ?? Product::find($get('product_id'))?->price ?? 0),
                                         TextInput::make('qty')
                                             ->numeric()
-                                            ->default(1)
+                                            ->default(0)
                                             ->reactive()
                                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                                 $price = $get('price') ?? 0;
@@ -161,10 +165,14 @@ class OrderResource extends Resource
                                                 $total = collect($items)->sum(fn($item) => $item['subtotal'] ?? 0);
                                                 $set('../../total_price', $total);
 
+                                                $tax_rate = $get('../../tax_rate');
+                                                $tax_amount = $total * $tax_rate / 100;
+                                                $set('../../tax_amount', $tax_amount);
+
                                                 $discount = $get('../../discount');
                                                 $discount_amount = $total * $discount / 100;
                                                 $set('../../discount_amount', $discount_amount);
-                                                $set('../../total_payment', $total - $discount_amount);
+                                                $set('../../total_payment', $total - $discount_amount + $tax_amount);
                                             })
                                             ->minValue(1)
                                             ->maxValue(function (Get $get) {
@@ -203,6 +211,18 @@ class OrderResource extends Resource
                             ->readOnly()
                             ->prefix('Rp')
                             ->columnSpanFull()
+                            ->default(0),
+                        TextInput::make('tax_rate')
+                            ->default(11)
+                            ->numeric()
+                            ->columnSpan(2)
+                            ->reactive()
+                            ->suffix('%')
+                            ->readOnly(),
+                        TextInput::make('tax_amount')
+                            ->columnSpan(2)
+                            ->readOnly()
+                            ->prefix('Rp')
                             ->default(0),
                         TextInput::make('discount')
                             ->default(0)
@@ -271,6 +291,10 @@ class OrderResource extends Resource
                     ->toggleable()
                     ->toggledHiddenByDefault(),
                 TextColumn::make('discount_amount')
+                    ->prefix('Rp')
+                    ->numeric()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('tax_amount')
                     ->prefix('Rp')
                     ->numeric()
                     ->toggleable(isToggledHiddenByDefault: true),
