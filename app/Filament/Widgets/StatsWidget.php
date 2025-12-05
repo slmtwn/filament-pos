@@ -11,7 +11,9 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class StatsWidget extends BaseWidget
 {
+    protected static ?int $sort = 1;
     protected function getStats(): array
+
     {
         return [
             Stat::make('Total Products', Product::count())
