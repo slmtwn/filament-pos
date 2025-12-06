@@ -22,6 +22,11 @@ class Product extends Model
         'barcode',
         'description',
         'base_price',
+        'uom_id',
+        'base_unit',
+        'purchase_unit',
+        'conversion_factor',
+        'gross_margin',
     ];
 
     public function orderdetail(): HasMany
@@ -39,5 +44,9 @@ class Product extends Model
     public function sub_category(): BelongsTo
     {
         return $this->belongsTo(SubCategory::class);
+    }
+    public function uom(): BelongsTo
+    {
+        return $this->belongsTo(Uom::class);
     }
 }

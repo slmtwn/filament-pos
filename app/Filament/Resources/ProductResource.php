@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use App\Models\Uom;
 use Filament\Forms;
 use Filament\Tables;
 use App\Models\Brand;
 use App\Models\Product;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use App\Models\BaseUnit;
 use App\Models\Category;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
@@ -103,12 +105,68 @@ class ProductResource extends Resource
                             ->maxLength(255)
                             ->columnSpanFull(),
                         TextInput::make('base_price')
+                            ->reactive()
                             ->numeric()
-                            ->prefix('Rp'),
+                            ->prefix('Rp')
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $set('gross_margin', ($get('price') ?? 0) - $get('base_price') ?? 0);
+                            })
+                            ->required(),
                         Forms\Components\TextInput::make('price')
                             ->required()
                             ->numeric()
-                            ->prefix('Rp'),
+                            ->prefix('Rp')
+                            ->reactive()
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $set('gross_margin', ($get('price') ?? 0) - $get('base_price') ?? 0);
+                            }),
+                        Forms\Components\TextInput::make('gross_margin')
+                            ->reactive()
+                            ->required()
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $set('gross_margin', ($get('price') ?? 0) - $get('base_price') ?? 0);
+                            })
+                            ->afterStateHydrated(function (callable $get, callable $set) {
+                                $set('gross_margin', ($get('price') ?? 0) - $get('base_price') ?? 0);
+                            }),
+                        Select::make('uom_id')
+                            ->relationship('uom', 'code')
+                            ->label('Unit of Measure')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                $uom = \App\Models\Uom::with('baseUnit')->find($state);
+                                if ($uom) {
+                                    $set('base_unit', $uom->baseUnit->id);
+                                    $set('purchase_unit', $uom->id);
+                                    $set('conversion_factor', $uom->conversion_factor);
+                                } else {
+                                    $set('base_unit', null);
+                                }
+                            })
+                            ->afterStateHydrated(function ($state, callable $set) {
+                                $uom = \App\Models\Uom::with('baseUnit')->find($state);
+                                if ($uom) {
+                                    $set('base_unit', $uom->baseUnit->id);
+                                    $set('purchase_unit', $uom->id);
+                                    $set('conversion_factor', $uom->conversion_factor);
+                                } else {
+                                    $set('base_unit', null);
+                                }
+                            }),
+                        Select::make('base_unit')
+                            ->reactive()
+                            ->label('Base Unit')
+                            ->options(BaseUnit::pluck('name', 'id')),
+                        Select::make('purchase_unit')
+                            ->reactive()
+                            ->label('Purchase Unit')
+                            ->options(Uom::pluck('name', 'id')),
+                        TextInput::make('conversion_factor')
+                            ->maxLength(255)
+                            ->label('Conversion Factor')
+                            ->readonly(),
                         Forms\Components\TextInput::make('stock')
                             ->required()
                             ->numeric(),
