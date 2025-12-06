@@ -2,9 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Uom;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\OrderDetail;
+use App\Models\SubCategory;
+use App\Models\PurchaseDetail;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Product extends Model
 {
@@ -48,5 +54,13 @@ class Product extends Model
     public function uom(): BelongsTo
     {
         return $this->belongsTo(Uom::class);
+    }
+    public function purchaseDetails(): HasMany
+    {
+        return $this->hasMany(PurchaseDetail::class);
+    }
+    public function PurchaseUnit(): BelongsTo
+    {
+        return $this->belongsTo(Uom::class, 'purchase_unit');
     }
 }

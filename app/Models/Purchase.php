@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\PurchaseDetail;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Purchase extends Model
 {
@@ -19,4 +21,12 @@ class Purchase extends Model
         'total_payment',
         'status',
     ];
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+    public function purchaseDetails(): HasMany
+    {
+        return $this->hasMany(PurchaseDetail::class, 'purchase_id');
+    }
 }

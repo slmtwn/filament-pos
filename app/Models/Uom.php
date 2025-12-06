@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Product;
 use App\Models\BaseUnit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Uom extends Model
@@ -21,7 +23,7 @@ class Uom extends Model
     {
         return $this->belongsTo(BaseUnit::class);
     }
-    public function products()
+    public function product(): HasMany
     {
         return $this->hasMany(Product::class);
     }

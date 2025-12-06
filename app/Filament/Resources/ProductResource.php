@@ -17,11 +17,14 @@ use App\Models\SubCategory;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Illuminate\Database\Eloquent\Builder;
@@ -106,7 +109,6 @@ class ProductResource extends Resource
                             ->columnSpanFull(),
                         TextInput::make('base_price')
                             ->reactive()
-                            ->numeric()
                             ->prefix('Rp')
                             ->afterStateUpdated(function (callable $get, callable $set) {
                                 $set('gross_margin', ($get('price') ?? 0) - $get('base_price') ?? 0);
@@ -114,7 +116,6 @@ class ProductResource extends Resource
                             ->required(),
                         Forms\Components\TextInput::make('price')
                             ->required()
-                            ->numeric()
                             ->prefix('Rp')
                             ->reactive()
                             ->afterStateUpdated(function (callable $get, callable $set) {
@@ -123,7 +124,6 @@ class ProductResource extends Resource
                         Forms\Components\TextInput::make('gross_margin')
                             ->reactive()
                             ->required()
-                            ->numeric()
                             ->prefix('Rp')
                             ->afterStateUpdated(function (callable $get, callable $set) {
                                 $set('gross_margin', ($get('price') ?? 0) - $get('base_price') ?? 0);
@@ -133,26 +133,14 @@ class ProductResource extends Resource
                             }),
                         Select::make('uom_id')
                             ->relationship('uom', 'code')
-                            ->label('Unit of Measure')
+                            ->label('UOM Code')
                             ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                $uom = \App\Models\Uom::with('baseUnit')->find($state);
+                            ->afterStateUpdated(function (Get $get, Set $set) {
+                                $uom = Uom::find($get('uom_id'));
                                 if ($uom) {
-                                    $set('base_unit', $uom->baseUnit->id);
+                                    $set('base_unit', $uom->base_unit_id);
                                     $set('purchase_unit', $uom->id);
-                                    $set('conversion_factor', $uom->conversion_factor);
-                                } else {
-                                    $set('base_unit', null);
-                                }
-                            })
-                            ->afterStateHydrated(function ($state, callable $set) {
-                                $uom = \App\Models\Uom::with('baseUnit')->find($state);
-                                if ($uom) {
-                                    $set('base_unit', $uom->baseUnit->id);
-                                    $set('purchase_unit', $uom->id);
-                                    $set('conversion_factor', $uom->conversion_factor);
-                                } else {
-                                    $set('base_unit', null);
+                                    $set('conversion_factor', 1);
                                 }
                             }),
                         Select::make('base_unit')
@@ -164,6 +152,7 @@ class ProductResource extends Resource
                             ->label('Purchase Unit')
                             ->options(Uom::pluck('name', 'id')),
                         TextInput::make('conversion_factor')
+                            ->reactive()
                             ->maxLength(255)
                             ->label('Conversion Factor')
                             ->readonly(),
