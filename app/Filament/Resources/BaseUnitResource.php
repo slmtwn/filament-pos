@@ -17,7 +17,8 @@ class BaseUnitResource extends Resource
 {
     protected static ?string $model = BaseUnit::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-calculator';
+    protected static ?string $activeNavigationIcon = 'heroicon-s-calculator';
 
     public static function form(Form $form): Form
     {

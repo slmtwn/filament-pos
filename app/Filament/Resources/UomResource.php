@@ -17,7 +17,8 @@ class UomResource extends Resource
 {
     protected static ?string $model = Uom::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static ?string $activeNavigationIcon = 'heroicon-s-scale';
 
     public static function form(Form $form): Form
     {
